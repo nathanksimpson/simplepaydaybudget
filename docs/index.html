@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payday Daily Calculator</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .hero {
+            text-align: center;
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+        }
+
+        .allowance-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .allowance-value {
+            font-size: 3.5rem;
+            font-weight: 900;
+            display: block;
+            margin: 8px 0;
+            transition: color 0.3s ease;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-box {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); display: block; }
+        .stat-value { font-weight: 700; font-size: 1.1rem; }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        .bill-row {
+            display: grid;
+            grid-template-columns: 1fr 100px 130px 40px;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        @media (max-width: 500px) {
+            .bill-row {
+                grid-template-columns: 1fr 1fr;
+            }
+            .bill-row input:nth-child(1) { grid-column: span 2; }
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: #f1f5f9; }
+
+        .btn-danger { background: #fee2e2; color: var(--danger); }
+        .btn-danger:hover { background: #fecaca; }
+
+        .btn-full { width: 100%; margin-top: 8px; }
+
+        .help-section {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .help-section h3 { color: var(--text-main); font-size: 1rem; margin-top: 0; }
+        
+        .tooltip { cursor: help; color: var(--primary); margin-left: 4px; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .modal {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        section h2 { font-size: 1.125rem; margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Payday Daily</h1>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline" onclick="App.exportData()">Export</button>
+            <button class="btn btn-outline" onclick="document.getElementById('fileInput').click()">Import</button>
+            <input type="file" id="fileInput" hidden onchange="App.importData(event)" accept=".json">
+        </div>
+    </header>
+
+    <div class="card hero">
+        <span class="allowance-label">Daily Allowance</span>
+        <span id="displayAllowance" class="allowance-value">$0.00</span>
+        <div id="statusBadge" class="status-badge">Calculating...</div>
+        
+        <div class="grid">
+            <div class="stat-box">
+                <span class="stat-label">Remaining Balance</span>
+                <span id="displayRemaining" class="stat-value">$0.00</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Days Until Payday <span class="tooltip" title="Conservative calculation: Counts from today through and including your payday.">ⓘ</span></span>
+                <span id="displayDays" class="stat-value">0 days</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+        <section class="card">
+            <h2>Current Finances</h2>
+            <label>Available Balance</label>
+            <input type="number" id="balance" placeholder="0.00" step="0.01" oninput="App.sync()">
+            
+            <label>Daily Spending Target</label>
+            <input type="number" id="target" placeholder="Optional" step="1" oninput="App.sync()">
+        </section>
+
+        <section class="card">
+            <h2>Payday Schedule</h2>
+            <label>Frequency</label>
+            <select id="scheduleType" onchange="App.sync()">
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="manual">Manual (Once)</option>
+            </select>
+            
+            <label>Anchor Date / Next Payday</label>
+            <input type="date" id="anchorDate" oninput="App.sync()">
+        </section>
+    </div>
+
+    <section class="card">
+        <h2>Upcoming Bills</h2>
+        <div id="billsList"></div>
+        <button class="btn btn-primary btn-full" onclick="App.addBill()">+ Add Bill</button>
+    </section>
+
+    <footer class="card help-section">
+        <h3>How it works (Conservative Logic)</h3>
+        <p>This version treats your <strong>payday as the final day</strong> of your current budget. This is safer if you don't receive your paycheck until late in the day.</p>
+        <p><strong>Logic:</strong> If your balance is $1000 and payday is in 10 days (counting today and payday), your allowance is ($1000 - bills) / 10 days.</p>
+        <p><strong>Bills:</strong> Any bill due <strong>on your payday</strong> is deducted from your current balance to ensure you don't accidentally spend that money before the bill hits.</p>
+    </footer>
+</div>
+
+<!-- Custom Message Modal -->
+<div id="modalOverlay" class="modal-overlay">
+    <div class="modal">
+        <h3 id="modalTitle">Message</h3>
+        <p id="modalBody"></p>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+            <button class="btn btn-outline" id="modalCancel">Cancel</button>
+            <button class="btn btn-primary" id="modalConfirm">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * CORE LOGIC ENGINE (CONSERVATIVE)
+ */
+const Calculator = {
+    normalize(date) {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    },
+
+    getNextPayday(schedule) {
+        const today = this.normalize(new Date());
+        let anchor = this.normalize(schedule.anchorDate);
+
+        if (schedule.type === 'manual') return anchor;
+
+        while (anchor < today) {
+            if (schedule.type === 'weekly') anchor.setDate(anchor.getDate() + 7);
+            else if (schedule.type === 'biweekly') anchor.setDate(anchor.getDate() + 14);
+            else if (schedule.type === 'monthly') {
+                const nextMonth = anchor.getMonth() + 1;
+                anchor.setMonth(nextMonth);
+                if (anchor.getMonth() > (nextMonth % 12)) anchor.setDate(0); 
+            }
+        }
+        return anchor;
+    },
+
+    calculate(state) {
+        const today = this.normalize(new Date());
+        const nextPayday = this.getNextPayday(state.schedule);
+        
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const diffMs = nextPayday - today;
+        
+        // CONSERVATIVE CHANGE: Math.ceil + 1 includes both today and payday
+        const days = Math.max(1, Math.ceil(diffMs / msPerDay) + 1);
+
+        // CONSERVATIVE CHANGE: dueDate <= nextPayday (Includes bills due on payday)
+        const activeBills = state.bills.filter(bill => {
+            const dueDate = this.normalize(bill.dueDate);
+            return dueDate >= today && dueDate <= nextPayday;
+        });
+
+        const totalBills = activeBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+        const remaining = state.balance - totalBills;
+        const allowance = remaining / days;
+
+        return {
+            allowance,
+            remaining,
+            days,
+            nextPayday,
+            activeBills
+        };
+    }
+};
+
+/**
+ * APP MODULE
+ */
+const App = {
+    state: {
+        version: 1,
+        balance: 0,
+        target: 0,
+        schedule: {
+            type: 'biweekly',
+            anchorDate: new Date().toISOString().split('T')[0]
+        },
+        bills: []
+    },
+
+    init() {
+        this.load();
+        this.renderAll();
+        window._paydayCalc = { State: this.state, Calculator };
+    },
+
+    load() {
+        const raw = localStorage.getItem('paydayCalc_v1');
+        if (raw) {
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed.version === 1) this.state = parsed;
+            } catch (e) { console.error("Load failed", e); }
+        }
+    },
+
+    save() {
+        localStorage.setItem('paydayCalc_v1', JSON.stringify(this.state));
+    },
+
+    sync() {
+        this.state.balance = Number(document.getElementById('balance').value) || 0;
+        this.state.target = Number(document.getElementById('target').value) || 0;
+        this.state.schedule.type = document.getElementById('scheduleType').value;
+        this.state.schedule.anchorDate = document.getElementById('anchorDate').value;
+        
+        this.save();
+        this.updateView();
+    },
+
+    addBill() {
+        this.state.bills.push({
+            id: Date.now(),
+            name: '',
+            amount: 0,
+            dueDate: new Date().toISOString().split('T')[0]
+        });
+        this.save();
+        this.renderBills();
+        this.updateView();
+    },
+
+    updateBill(id, field, value) {
+        const bill = this.state.bills.find(b => b.id === id);
+        if (bill) {
+            bill[field] = field === 'amount' ? Number(value) : value;
+            this.save();
+            this.updateView();
+        }
+    },
+
+    removeBill(id) {
+        this.state.bills = this.state.bills.filter(b => b.id !== id);
+        this.save();
+        this.renderBills();
+        this.updateView();
+    },
+
+    renderBills() {
+        const list = document.getElementById('billsList');
+        list.innerHTML = '';
+        this.state.bills.forEach(bill => {
+            const div = document.createElement('div');
+            div.className = 'bill-row';
+            div.innerHTML = `
+                <input type="text" value="${bill.name}" placeholder="Bill name" oninput="App.updateBill(${bill.id}, 'name', this.value)">
+                <input type="number" value="${bill.amount}" placeholder="0" oninput="App.updateBill(${bill.id}, 'amount', this.value)">
+                <input type="date" value="${bill.dueDate}" oninput="App.updateBill(${bill.id}, 'dueDate', this.value)">
+                <button class="btn btn-danger" onclick="App.removeBill(${bill.id})">×</button>
+            `;
+            list.appendChild(div);
+        });
+    },
+
+    renderAll() {
+        document.getElementById('balance').value = this.state.balance || '';
+        document.getElementById('target').value = this.state.target || '';
+        document.getElementById('scheduleType').value = this.state.schedule.type;
+        document.getElementById('anchorDate').value = this.state.schedule.anchorDate;
+        this.renderBills();
+        this.updateView();
+    },
+
+    updateView() {
+        const res = Calculator.calculate(this.state);
+        const allowanceEl = document.getElementById('displayAllowance');
+        const badgeEl = document.getElementById('statusBadge');
+
+        allowanceEl.innerText = `$${res.allowance.toFixed(2)}`;
+        document.getElementById('displayRemaining').innerText = `$${res.remaining.toFixed(2)}`;
+        document.getElementById('displayDays').innerText = `${res.days} day${res.days === 1 ? '' : 's'}`;
+
+        if (res.allowance < 0) {
+            allowanceEl.style.color = 'var(--danger)';
+            badgeEl.innerText = 'Deficit';
+            badgeEl.style.background = '#fee2e2';
+            badgeEl.style.color = 'var(--danger)';
+        } else if (this.state.target > 0 && res.allowance < this.state.target) {
+            allowanceEl.style.color = 'var(--warning)';
+            badgeEl.innerText = 'Below Target';
+            badgeEl.style.background = '#fef3c7';
+            badgeEl.style.color = 'var(--warning)';
+        } else {
+            allowanceEl.style.color = 'var(--success)';
+            badgeEl.innerText = 'Safe to Spend';
+            badgeEl.style.background = '#d1fae5';
+            badgeEl.style.color = 'var(--success)';
+        }
+    },
+
+    exportData() {
+        const dataStr = JSON.stringify(this.state, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `payday-backup-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+    },
+
+    importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const json = JSON.parse(e.target.result);
+                if (json.version) {
+                    this.showModal("Confirm Import", "This will overwrite your current data. Continue?", () => {
+                        this.state = json;
+                        this.save();
+                        this.renderAll();
+                    });
+                }
+            } catch (err) { alert("Could not parse file."); }
+        };
+        reader.readAsText(file);
+    },
+
+    showModal(title, body, onConfirm) {
+        const overlay = document.getElementById('modalOverlay');
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalBody').innerText = body;
+        overlay.style.display = 'flex';
+        const confirmBtn = document.getElementById('modalConfirm');
+        const cancelBtn = document.getElementById('modalCancel');
+        const cleanup = () => { overlay.style.display = 'none'; };
+        confirmBtn.onclick = () => { onConfirm(); cleanup(); };
+        cancelBtn.onclick = cleanup;
+    }
+};
+
+window.onload = () => App.init();
+</script>
+
+</body>
+</html>
