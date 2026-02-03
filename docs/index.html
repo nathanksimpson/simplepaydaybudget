@@ -31,14 +31,14 @@
       }
 
       .page {
-        max-width: 980px;
+        max-width: 1120px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 24px;
       }
 
       h1 {
-        margin: 6px 0 16px;
-        font-size: 28px;
+        margin: 0 0 8px;
+        font-size: 26px;
       }
 
       h2 {
@@ -50,18 +50,52 @@
         margin: 8px 0;
       }
 
+      .app-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .app-subtitle {
+        max-width: 640px;
+      }
+
+      .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .layout {
+        display: grid;
+        gap: 16px;
+      }
+
+      .column {
+        min-width: 0;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
       .card {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 16px;
-        margin-bottom: 16px;
+        margin-bottom: 0;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
       }
 
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 12px;
       }
 
@@ -110,6 +144,12 @@
         color: #fff;
         border: none;
         cursor: pointer;
+      }
+
+      .header-actions button,
+      .buttons button,
+      .section-toolbar button {
+        width: auto;
       }
 
       button.secondary {
@@ -180,6 +220,61 @@
         gap: 10px;
       }
 
+      .results-bar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--card);
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+      }
+
+      .results-bar > summary {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .results-bar > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .results-bar > summary::after {
+        content: "+";
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .results-bar[open] > summary::after {
+        content: "-";
+      }
+
+      .results-compact {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: right;
+      }
+
+      .results-compact-label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .results-compact-value {
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .results-body {
+        padding: 0 16px 16px;
+      }
+
       .result-box {
         padding: 12px;
         border-radius: 10px;
@@ -196,195 +291,287 @@
         text-decoration: underline dotted;
         cursor: help;
       }
+
+      .section {
+        padding: 0;
+      }
+
+      .section > summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .section > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .section > summary::after {
+        content: "+";
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .section[open] > summary {
+        border-bottom: 1px solid var(--border);
+      }
+
+      .section[open] > summary::after {
+        content: "-";
+      }
+
+      .section-body {
+        padding: 16px;
+      }
+
+      .section-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      @media (min-width: 900px) {
+        h1 {
+          font-size: 30px;
+        }
+
+        .layout {
+          grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+          align-items: start;
+        }
+
+        .results-bar {
+          top: 12px;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="page">
-      <h1>Payday Calculator</h1>
-      <p class="muted">
-        Figure out how much you can spend each day until payday. Fill in your
-        balance, bills, and schedule, and the results update automatically.
-      </p>
-
-      <div class="card">
-        <h2>Balance</h2>
-        <div class="grid">
-          <div>
-            <label for="balance">Current balance</label>
-            <input id="balance" type="number" min="0" step="0.01" />
-          </div>
-          <div class="inline" style="align-items: flex-end">
-            <label>
-              <input id="dailyTargetEnabled" type="checkbox" />
-              Use a spending target
-            </label>
-          </div>
-          <div>
-            <label for="dailyTarget">Spending target amount</label>
-            <input id="dailyTarget" type="number" min="0" step="0.01" />
-          </div>
-          <div>
-            <label for="targetPeriod">Target period</label>
-            <select id="targetPeriod">
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly (Sun-Sat)</option>
-            </select>
-            <div class="muted">Weekly compares against the remaining days this week.</div>
-          </div>
-          <div class="inline" style="align-items: flex-end">
-            <label>
-              <input id="savingsGoalEnabled" type="checkbox" />
-              Use a savings goal by payday
-            </label>
-          </div>
-          <div>
-            <label for="savingsGoal">Savings goal amount</label>
-            <input id="savingsGoal" type="number" min="0" step="0.01" />
-          </div>
+      <header class="app-header">
+        <div>
+          <h1>Payday Calculator</h1>
+          <p class="muted app-subtitle">
+            Figure out how much you can spend each day until payday. Fill in your
+            balance, bills, and schedule, and the results update automatically.
+          </p>
         </div>
-      </div>
-
-      <div class="card">
-        <h2>Payday Schedule</h2>
-        <div class="grid">
-          <div>
-            <label for="scheduleMode">Schedule type</label>
-            <select id="scheduleMode">
-              <option value="manual">Manual date</option>
-              <option value="recurring">Recurring</option>
-            </select>
-          </div>
-          <div>
-            <label for="manualDate">Next payday (manual)</label>
-            <input id="manualDate" type="date" />
-          </div>
-        </div>
-        <div class="grid" style="margin-top: 12px">
-          <div>
-            <label for="recurrenceType">Recurring type</label>
-            <select id="recurrenceType">
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Biweekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </div>
-          <div>
-            <label for="anchorDate">Anchor date</label>
-            <input id="anchorDate" type="date" />
-          </div>
-          <div>
-            <label for="interval">Interval</label>
-            <input id="interval" type="number" min="1" step="1" />
-            <div class="muted">
-              Weekly/biweekly use weeks. Monthly uses months.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="inline" style="justify-content: space-between">
-          <h2>Bills</h2>
-          <button id="addBill" class="ghost" type="button">Add bill</button>
-        </div>
-        <div class="muted">Only bills that occur before the next payday are subtracted.</div>
-        <div style="overflow-x: auto; margin-top: 8px">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Amount</th>
-                <th>Due date</th>
-                <th>Recurring</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="billsBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Results</h2>
-        <div class="results-grid">
-          <div class="result-box">
-            <div class="muted">Days remaining</div>
-            <div id="daysRemaining" class="result-value">--</div>
-            <div class="muted">
-              <span class="tooltip" title="We count full days between today and payday. Today is not counted as a spendable day.">
-                Exclusive day logic
-              </span>
-            </div>
-          </div>
-          <div class="result-box">
-            <div class="muted">Next payday</div>
-            <div id="paydayLabel" class="result-value">--</div>
-            <div id="paydayIn" class="muted"></div>
-          </div>
-          <div class="result-box">
-            <div class="muted">Remaining balance</div>
-            <div id="remainingBalance" class="result-value">--</div>
-          </div>
-          <div class="result-box">
-            <div class="muted">Daily allowance</div>
-            <div id="dailyAllowance" class="result-value">--</div>
-          </div>
-          <div class="result-box">
-            <div class="muted">Weekly allowance (Sun-Sat)</div>
-            <div id="weeklyAllowance" class="result-value">--</div>
-          </div>
-          <div class="result-box">
-            <div class="muted">Savings per day</div>
-            <div id="savingsPerDay" class="result-value">--</div>
-          </div>
-          <div class="result-box">
-            <div class="muted">Allowance after savings</div>
-            <div id="afterSavings" class="result-value">--</div>
-          </div>
-        </div>
-        <div id="warnings" style="margin-top: 10px"></div>
-      </div>
-
-      <div class="card">
-        <h2>Save / Load</h2>
-        <div class="buttons">
+        <div class="header-actions">
           <button id="saveState" type="button">Save</button>
           <button id="loadState" class="secondary" type="button">Load</button>
-          <button id="resetState" class="ghost" type="button">Reset</button>
-        </div>
-        <div class="muted">Saves to your browser (localStorage).</div>
-      </div>
-
-      <div class="card">
-        <h2>Export / Import</h2>
-        <div class="grid">
-          <div>
-            <label for="importFile">Import from file</label>
-            <input id="importFile" type="file" accept="application/json" />
-          </div>
-          <div>
-            <label for="importText">Paste JSON</label>
-            <textarea id="importText" placeholder="Paste exported JSON here..."></textarea>
-          </div>
-        </div>
-        <div class="buttons" style="margin-top: 8px">
-          <button id="previewImport" class="secondary" type="button">
-            Preview import
-          </button>
-          <button id="applyImport" type="button" disabled>
-            Confirm overwrite
-          </button>
           <button id="exportState" class="ghost" type="button">Export</button>
         </div>
-        <div id="importPreview" class="muted" style="margin-top: 10px"></div>
-      </div>
+      </header>
 
-      <div class="card">
-        <h2>Help</h2>
-        <p><span class="chip">How it works</span> We find your next payday, count how many days remain, subtract bills that happen before payday, and divide the remaining balance by the days left.</p>
-        <p><span class="chip">Assumptions</span> Dates use your local time. Bills are simple fixed amounts and do not account for tax or fees. Savings goals are assumed due by payday.</p>
-        <p><span class="chip">Limitations</span> This is a simple calculator and does not replace a full budget planner.</p>
-        <p><span class="chip">Future ideas</span> Multiple incomes, savings goals, calendar view, CSV export, currency selection, and an emergency buffer.</p>
+      <details class="results-bar card" id="resultsBar">
+        <summary>
+          <span>Results</span>
+          <span class="results-compact">
+            <span id="resultsCompactLabel" class="results-compact-label">Daily budget</span>
+            <span id="resultsCompactValue" class="results-compact-value">--</span>
+          </span>
+        </summary>
+        <div class="results-body">
+          <div class="results-grid">
+            <div class="result-box">
+              <div class="muted">Days remaining</div>
+              <div id="daysRemaining" class="result-value">--</div>
+              <div class="muted">
+                <span class="tooltip" title="We count full days between today and payday. Today is not counted as a spendable day.">
+                  Exclusive day logic
+                </span>
+              </div>
+            </div>
+            <div class="result-box">
+              <div class="muted">Next payday</div>
+              <div id="paydayLabel" class="result-value">--</div>
+              <div id="paydayIn" class="muted"></div>
+            </div>
+            <div class="result-box">
+              <div class="muted">Remaining balance</div>
+              <div id="remainingBalance" class="result-value">--</div>
+            </div>
+            <div class="result-box">
+              <div class="muted">Daily allowance</div>
+              <div id="dailyAllowance" class="result-value">--</div>
+            </div>
+            <div class="result-box">
+              <div class="muted">Weekly allowance (Sun-Sat)</div>
+              <div id="weeklyAllowance" class="result-value">--</div>
+            </div>
+            <div class="result-box">
+              <div class="muted">Savings per day</div>
+              <div id="savingsPerDay" class="result-value">--</div>
+            </div>
+            <div class="result-box">
+              <div class="muted">Allowance after savings</div>
+              <div id="afterSavings" class="result-value">--</div>
+            </div>
+          </div>
+          <div id="warnings" style="margin-top: 10px"></div>
+        </div>
+      </details>
+
+      <div class="layout">
+        <div class="column stack">
+          <details class="section card" data-section>
+            <summary>Balance</summary>
+            <div class="section-body">
+              <div class="grid">
+                <div>
+                  <label for="balance">Current balance</label>
+                  <input id="balance" type="number" min="0" step="0.01" />
+                </div>
+                <div class="inline" style="align-items: flex-end">
+                  <label>
+                    <input id="dailyTargetEnabled" type="checkbox" />
+                    Use a spending target
+                  </label>
+                </div>
+                <div>
+                  <label for="dailyTarget">Spending target amount</label>
+                  <input id="dailyTarget" type="number" min="0" step="0.01" />
+                </div>
+                <div>
+                  <label for="targetPeriod">Target period</label>
+                  <select id="targetPeriod">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly (Sun-Sat)</option>
+                  </select>
+                  <div class="muted">Weekly compares against the remaining days this week.</div>
+                </div>
+                <div class="inline" style="align-items: flex-end">
+                  <label>
+                    <input id="savingsGoalEnabled" type="checkbox" />
+                    Use a savings goal by payday
+                  </label>
+                </div>
+                <div>
+                  <label for="savingsGoal">Savings goal amount</label>
+                  <input id="savingsGoal" type="number" min="0" step="0.01" />
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="section card" data-section>
+            <summary>Payday Schedule</summary>
+            <div class="section-body">
+              <div class="grid">
+                <div>
+                  <label for="scheduleMode">Schedule type</label>
+                  <select id="scheduleMode">
+                    <option value="manual">Manual date</option>
+                    <option value="recurring">Recurring</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="manualDate">Next payday (manual)</label>
+                  <input id="manualDate" type="date" />
+                </div>
+              </div>
+              <div class="grid" style="margin-top: 12px">
+                <div>
+                  <label for="recurrenceType">Recurring type</label>
+                  <select id="recurrenceType">
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Biweekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="anchorDate">Anchor date</label>
+                  <input id="anchorDate" type="date" />
+                </div>
+                <div>
+                  <label for="interval">Interval</label>
+                  <input id="interval" type="number" min="1" step="1" />
+                  <div class="muted">
+                    Weekly/biweekly use weeks. Monthly uses months.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="section card" data-section>
+            <summary>Bills</summary>
+            <div class="section-body">
+              <div class="section-toolbar">
+                <div class="muted">Only bills that occur before the next payday are subtracted.</div>
+                <button id="addBill" class="ghost" type="button">Add bill</button>
+              </div>
+              <div style="overflow-x: auto; margin-top: 8px">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Amount</th>
+                      <th>Due date</th>
+                      <th>Recurring</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="billsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+
+          <details class="section card" data-section>
+            <summary>Import / Export</summary>
+            <div class="section-body">
+              <div class="grid">
+                <div>
+                  <label for="importFile">Import from file</label>
+                  <input id="importFile" type="file" accept="application/json" />
+                </div>
+                <div>
+                  <label for="importText">Paste JSON</label>
+                  <textarea id="importText" placeholder="Paste exported JSON here..."></textarea>
+                </div>
+              </div>
+              <div class="buttons" style="margin-top: 8px">
+                <button id="previewImport" class="secondary" type="button">
+                  Preview import
+                </button>
+                <button id="applyImport" type="button" disabled>
+                  Confirm overwrite
+                </button>
+              </div>
+              <div id="importPreview" class="muted" style="margin-top: 10px"></div>
+            </div>
+          </details>
+
+          <details class="section card" data-section>
+            <summary>Session</summary>
+            <div class="section-body">
+              <div class="buttons">
+                <button id="resetState" class="ghost" type="button">Reset</button>
+              </div>
+              <div class="muted">Resets the form and clears saved browser data.</div>
+            </div>
+          </details>
+        </div>
+
+        <div class="column stack">
+          <div class="card">
+            <h2>Help</h2>
+            <p><span class="chip">How it works</span> We find your next payday, count how many days remain, subtract bills that happen before payday, and divide the remaining balance by the days left.</p>
+            <p><span class="chip">Assumptions</span> Dates use your local time. Bills are simple fixed amounts and do not account for tax or fees. Savings goals are assumed due by payday.</p>
+            <p><span class="chip">Limitations</span> This is a simple calculator and does not replace a full budget planner.</p>
+            <p><span class="chip">Future ideas</span> Multiple incomes, savings goals, calendar view, CSV export, currency selection, and an emergency buffer.</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -759,6 +946,9 @@
           previewImport: document.getElementById("previewImport"),
           applyImport: document.getElementById("applyImport"),
           importPreview: document.getElementById("importPreview"),
+          resultsBar: document.getElementById("resultsBar"),
+          resultsCompactLabel: document.getElementById("resultsCompactLabel"),
+          resultsCompactValue: document.getElementById("resultsCompactValue"),
         };
 
         let pendingImport = null;
@@ -840,6 +1030,13 @@
           const daysLeftInWeek = Math.max(0, 6 - today.getDay());
           const weeklyAllowance = compareDaily * daysLeftInWeek;
           elements.weeklyAllowance.textContent = formatMoney(weeklyAllowance);
+          const compactIsWeekly = state.targetPeriod === "weekly";
+          elements.resultsCompactLabel.textContent = compactIsWeekly
+            ? "Weekly budget"
+            : "Daily budget";
+          elements.resultsCompactValue.textContent = formatMoney(
+            compactIsWeekly ? weeklyAllowance : compareDaily
+          );
 
           let warningsHtml = "";
           result.errors.forEach((error) => {
@@ -1045,12 +1242,44 @@
           });
         };
 
+        const setupSections = () => {
+          const media = window.matchMedia("(min-width: 900px)");
+          const applyState = () => {
+            document.querySelectorAll("details[data-section]").forEach((detail) => {
+              detail.open = media.matches;
+            });
+          };
+          applyState();
+          if (typeof media.addEventListener === "function") {
+            media.addEventListener("change", applyState);
+          } else if (typeof media.addListener === "function") {
+            media.addListener(applyState);
+          }
+        };
+
+        const setupResultsBar = () => {
+          const detail = elements.resultsBar;
+          if (!detail) return;
+          const media = window.matchMedia("(min-width: 900px)");
+          const applyState = () => {
+            detail.open = media.matches;
+          };
+          applyState();
+          if (typeof media.addEventListener === "function") {
+            media.addEventListener("change", applyState);
+          } else if (typeof media.addListener === "function") {
+            media.addListener(applyState);
+          }
+        };
+
         const init = () => {
           const stored = Storage.load();
           if (stored && stored.data) {
             State.set(stored.data);
           }
           syncInputsFromState();
+          setupSections();
+          setupResultsBar();
           renderResults();
           bindEvents();
         };
