@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Payday Calculator</title>
-    <link rel="icon" href="/favicon.ico" sizes="32x32">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="icon" href="favicon.ico" sizes="32x32">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <style>
       :root {
         color-scheme: light;
@@ -204,36 +204,6 @@
         font-weight: 600;
       }
 
-      .table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .table th,
-      .table td {
-        padding: 8px 6px;
-        border-bottom: 1px solid var(--border);
-        text-align: left;
-        font-size: 14px;
-      }
-
-      .table th:nth-child(3),
-      .table td:nth-child(3) {
-        width: 120px;
-      }
-
-      .table td:nth-child(3) input {
-        font-size: 12px;
-        padding: 6px 8px;
-      }
-
-      .table td label {
-        display: block;
-        font-size: 12px;
-        color: var(--muted);
-        margin-bottom: 4px;
-      }
-
       .bills-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -274,11 +244,6 @@
         .bills-grid {
           grid-template-columns: 1fr;
         }
-      }
-
-      .table th {
-        color: var(--muted);
-        font-weight: 600;
       }
 
       .chip {
@@ -371,15 +336,14 @@
         background: #fafafa;
       }
 
-      .result-box.recessed {
-        background: #f4f6f9;
-        border-color: #d9dde3;
-        box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.12);
-      }
-
       .result-value {
         font-size: 20px;
         font-weight: 700;
+      }
+
+      #importPreview pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
       }
 
       .tooltip {
@@ -500,7 +464,7 @@
               <div id="dailyAllowance" class="result-value">--</div>
             </div>
             <div class="result-box">
-              <div class="muted">Weekly Budget (Sun-Sat)</div>
+              <div class="muted">Weekly budget (Sun-Sat)</div>
               <div id="weeklyAllowance" class="result-value">--</div>
             </div>
             <div class="result-box">
@@ -711,45 +675,45 @@
           return `${year}-${month}-${day}`;
         };
 
-        const daysBetween = (start, end) => {
-          const ms = end.getTime() - start.getTime();
-          return Math.floor(ms / 86400000);
-        };
+        const DAY_MS = 86400000;
+        const MAX_STEPS = 1000;
 
-        const clampDay = (year, monthIndex, day) => {
-          const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-          return Math.min(day, lastDay);
-        };
+        const daysBetween = (start, end) => Math.floor((end.getTime() - start.getTime()) / DAY_MS);
 
+        // Same day-of-month `months` later, clamped to the month's last day (Jan 31 + 1 month = Feb 28).
         const addMonthsClamped = (date, months) => {
-          const year = date.getFullYear();
-          const monthIndex = date.getMonth() + months;
-          const day = date.getDate();
-          const target = new Date(year, monthIndex, 1);
-          const clampedDay = clampDay(target.getFullYear(), target.getMonth(), day);
-          return new Date(target.getFullYear(), target.getMonth(), clampedDay);
+          const target = new Date(date.getFullYear(), date.getMonth() + months, 1);
+          const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+          return new Date(target.getFullYear(), target.getMonth(), Math.min(date.getDate(), lastDay));
+        };
+
+        // The nth occurrence of a repeating date. Monthly steps are counted from the start date, so a
+        // date on the 31st comes back to the 31st after a short month instead of drifting to the 28th.
+        const nthOccurrence = (start, type, interval, n) => {
+          if (type === "monthly") return addMonthsClamped(start, n * interval);
+          const weeks = type === "biweekly" ? interval * 2 : interval;
+          const next = new Date(start);
+          next.setDate(next.getDate() + n * weeks * 7);
+          return next;
+        };
+
+        // Occurrences of a repeating date from `start`, in order, until `stop(date)` is true.
+        const occurrences = (start, type, interval, stop) => {
+          const dates = [];
+          for (let n = 0; n < MAX_STEPS; n += 1) {
+            const date = nthOccurrence(start, type, interval, n);
+            if (stop(date)) return { dates, done: true };
+            dates.push(date);
+          }
+          return { dates, done: false };
         };
 
         const resolveRecurringDate = (anchorDate, type, interval, afterDate) => {
-          if (!anchorDate) return null;
           const anchor = parseYMD(anchorDate);
           if (!anchor) return null;
-          const baseInterval = Math.max(1, Number(interval) || 1);
-          let current = anchor;
-          let guard = 0;
-          const maxSteps = 1000;
-
-          while (current <= afterDate && guard < maxSteps) {
-            if (type === "monthly") {
-              current = addMonthsClamped(current, baseInterval);
-            } else {
-              const weeks = type === "biweekly" ? baseInterval * 2 : baseInterval;
-              current = new Date(current.getTime() + weeks * 7 * 86400000);
-            }
-            guard += 1;
-          }
-
-          return guard >= maxSteps ? null : current;
+          const step = Math.max(1, Number(interval) || 1);
+          const { dates, done } = occurrences(anchor, type, step, (date) => date > afterDate);
+          return done ? nthOccurrence(anchor, type, step, dates.length) : null;
         };
 
         const getNextPayday = (state) => {
@@ -765,37 +729,13 @@
         };
 
         const getBillOccurrences = (bill, rangeStart, rangeEnd) => {
-          const occurrences = [];
           const due = parseYMD(bill.dueDate);
-          if (!due) return occurrences;
-
+          if (!due) return [];
           if (bill.recurring === "none") {
-            if (due >= rangeStart && due < rangeEnd) {
-              occurrences.push(due);
-            }
-            return occurrences;
+            return due >= rangeStart && due < rangeEnd ? [due] : [];
           }
-
-          const baseInterval = 1;
-          let current = due;
-          let guard = 0;
-          const maxSteps = 1000;
-
-          while (current < rangeEnd && guard < maxSteps) {
-            if (current >= rangeStart && current < rangeEnd) {
-              occurrences.push(current);
-            }
-
-            if (bill.recurring === "monthly") {
-              current = addMonthsClamped(current, baseInterval);
-            } else {
-              const weeks = bill.recurring === "biweekly" ? baseInterval * 2 : baseInterval;
-              current = new Date(current.getTime() + weeks * 7 * 86400000);
-            }
-            guard += 1;
-          }
-
-          return occurrences;
+          return occurrences(due, bill.recurring, 1, (date) => date >= rangeEnd).dates
+            .filter((date) => date >= rangeStart);
         };
 
         const sumBills = (bills, rangeStart, rangeEnd) => {
@@ -868,13 +808,10 @@
           };
         };
 
-        return {
-          calculate,
-          parseYMD,
-          formatYMD,
-          getNextPayday,
-          toLocalMidnight,
-        };
+        // Days left in this Sun-Sat week, not counting today.
+        const daysLeftInWeek = (today) => Math.max(0, 6 - today.getDay());
+
+        return { calculate, formatYMD, toLocalMidnight, daysLeftInWeek };
       })();
 
       const Storage = (() => {
@@ -898,7 +835,7 @@
           localStorage.removeItem(KEY);
         };
 
-        return { save, load, clear, KEY };
+        return { save, load, clear };
       })();
 
       const ImportExport = (() => {
@@ -954,7 +891,11 @@
 
         const normalize = (payload) => {
           if (!payload || typeof payload !== "object") return null;
-          if (payload.version === 1 && payload.data) return payload;
+          // Fill in anything a saved or imported file leaves out (e.g. no pay schedule), so the page never
+          // reads a missing field.
+          if (payload.version === 1 && payload.data && typeof payload.data === "object") {
+            return { version: 1, data: applyDefaults(payload.data) };
+          }
           if (payload.version === 1 && !payload.data) {
             return { version: 1, data: migrateLegacyState(payload) };
           }
@@ -965,19 +906,10 @@
         };
 
         const validate = (payload) => {
-          const errors = [];
           const normalized = normalize(payload);
-          if (!normalized) {
-            errors.push("Missing data object.");
-            return { ok: false, errors, normalized: null };
-          }
-          if (normalized.version !== 1) {
-            errors.push("Unsupported or missing version.");
-          }
-          if (typeof normalized.data !== "object") {
-            errors.push("Missing data object.");
-          }
-          return { ok: errors.length === 0, errors, normalized };
+          return normalized
+            ? { ok: true, errors: [], normalized }
+            : { ok: false, errors: ["Missing data object."], normalized: null };
         };
 
         const exportData = (state) => {
@@ -1035,6 +967,10 @@
 
         let pendingImport = null;
 
+        const escapeHtml = (value) =>
+          String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+        const message = (kind, text) => `<div class="${kind}">${escapeHtml(text)}</div>`;
+
         const formatMoney = (value) =>
           Number.isFinite(value)
             ? value.toLocaleString(undefined, { style: "currency", currency: "USD" })
@@ -1049,7 +985,7 @@
             card.className = "bill-card";
             card.innerHTML = `
               <div class="bill-header">
-                <input id="bill-name-${index}" data-field="name" data-index="${index}" value="${bill.name || ""}" placeholder="Bill name" />
+                <input id="bill-name-${index}" data-field="name" data-index="${index}" value="${escapeHtml(bill.name)}" placeholder="Bill name" />
                 <button class="icon-danger" data-action="remove" data-index="${index}" type="button" aria-label="Remove bill">
                   ×
                 </button>
@@ -1057,11 +993,11 @@
               <div class="bill-fields">
                 <div>
                   <label for="bill-amount-${index}">Amount</label>
-                  <input id="bill-amount-${index}" data-field="amount" data-index="${index}" type="number" min="0" step="0.01" value="${bill.amount ?? ""}" />
+                  <input id="bill-amount-${index}" data-field="amount" data-index="${index}" type="number" min="0" step="0.01" value="${escapeHtml(bill.amount)}" />
                 </div>
                 <div>
                   <label for="bill-due-${index}">Due date</label>
-                  <input id="bill-due-${index}" data-field="dueDate" data-index="${index}" type="date" value="${bill.dueDate || ""}" />
+                  <input id="bill-due-${index}" data-field="dueDate" data-index="${index}" type="date" value="${escapeHtml(bill.dueDate)}" />
                 </div>
                 <div class="full">
                   <label for="bill-recurring-${index}">Recurring</label>
@@ -1121,56 +1057,31 @@
           elements.savingsPerDay.textContent = formatMoney(result.savingsPerDay);
           elements.afterSavings.textContent = formatMoney(result.afterSavings);
           const compareDaily = state.savingsGoalEnabled ? result.afterSavings : result.daily;
-          const today = Calculator.toLocalMidnight(new Date());
-          const daysLeftInWeek = Math.max(0, 6 - today.getDay());
-          const weeklyAllowance = compareDaily * daysLeftInWeek;
+          const weeklyAllowance = compareDaily * Calculator.daysLeftInWeek(Calculator.toLocalMidnight(new Date()));
           elements.weeklyAllowance.textContent = formatMoney(weeklyAllowance);
-          const compactIsWeekly = state.targetPeriod === "weekly";
-          elements.resultsCompactLabel.textContent = compactIsWeekly
-            ? "Weekly Budget"
-            : "Daily budget";
-          elements.resultsCompactValue.textContent = formatMoney(
-            compactIsWeekly ? weeklyAllowance : compareDaily
-          );
+
+          const isWeekly = state.targetPeriod === "weekly";
+          const budget = isWeekly ? weeklyAllowance : compareDaily;
+          const target = Number(state.dailyTarget);
+          const hasTarget = state.dailyTargetEnabled && target > 0;
+          elements.resultsCompactLabel.textContent = isWeekly ? "Weekly budget" : "Daily budget";
+          elements.resultsCompactValue.textContent = formatMoney(budget);
           elements.resultsCompactValue.classList.remove("budget-good", "budget-bad");
-          if (state.dailyTargetEnabled && Number(state.dailyTarget) > 0) {
-            const targetValue = Number(state.dailyTarget);
-            const compactValue = compactIsWeekly ? weeklyAllowance : compareDaily;
-            elements.resultsCompactValue.classList.add(
-              compactValue >= targetValue ? "budget-good" : "budget-bad"
-            );
+          if (hasTarget) {
+            elements.resultsCompactValue.classList.add(budget >= target ? "budget-good" : "budget-bad");
           }
 
-          let warningsHtml = "";
-          result.errors.forEach((error) => {
-            warningsHtml += `<div class="danger">${error}</div>`;
-          });
-
+          let warningsHtml = result.errors.map((error) => message("danger", error)).join("");
           if (result.remaining < 0) {
-            warningsHtml += `<div class="danger">Remaining balance is negative.</div>`;
+            warningsHtml += message("danger", "Remaining balance is negative.");
           }
-
           if (state.savingsGoalEnabled && result.goalAmount > result.remaining) {
-            warningsHtml += `<div class="warning">Savings goal is larger than your remaining balance.</div>`;
+            warningsHtml += message("warning", "Savings goal is larger than your remaining balance.");
           }
-
-          let compareTarget = compareDaily;
-          let targetWarning = "Allowance is below your target.";
-          if (state.targetPeriod === "weekly") {
-            const today = Calculator.toLocalMidnight(new Date());
-            const daysLeftInWeek = Math.max(0, 6 - today.getDay());
-            compareTarget = compareDaily * daysLeftInWeek;
-            targetWarning = "Weekly allowance is below your target.";
-          }
-          if (
-            state.dailyTargetEnabled &&
-            Number(state.dailyTarget) > 0 &&
-            compareTarget < Number(state.dailyTarget)
-          ) {
-            warningsHtml += `<div class="warning">${targetWarning}</div>`;
-          } else if (state.dailyTargetEnabled && Number(state.dailyTarget) > 0) {
-            const targetLabel = state.targetPeriod === "weekly" ? "Weekly" : "Daily";
-            warningsHtml += `<div class="success">${targetLabel} budget meets or exceeds your target.</div>`;
+          if (hasTarget && budget < target) {
+            warningsHtml += message("warning", isWeekly ? "Weekly allowance is below your target." : "Allowance is below your target.");
+          } else if (hasTarget) {
+            warningsHtml += message("success", `${isWeekly ? "Weekly" : "Daily"} budget meets or exceeds your target.`);
           }
 
           elements.warnings.innerHTML = warningsHtml;
@@ -1231,9 +1142,7 @@
         const handlePreviewImport = (data) => {
           const validation = ImportExport.validate(data);
           if (!validation.ok) {
-            elements.importPreview.innerHTML = validation.errors
-              .map((error) => `<div class="danger">${error}</div>`)
-              .join("");
+            elements.importPreview.innerHTML = validation.errors.map((error) => message("danger", error)).join("");
             elements.applyImport.disabled = true;
             pendingImport = null;
             return;
@@ -1242,7 +1151,7 @@
           pendingImport = validation.normalized.data;
           elements.importPreview.innerHTML = `
             <div class="success">Import looks valid. Review below:</div>
-            <pre>${JSON.stringify(validation.normalized.data, null, 2)}</pre>
+            <pre>${escapeHtml(JSON.stringify(validation.normalized.data, null, 2))}</pre>
           `;
           elements.applyImport.disabled = false;
         };
@@ -1290,9 +1199,9 @@
           });
 
           elements.loadState.addEventListener("click", () => {
-            const payload = Storage.load();
-            if (payload && payload.data) {
-              State.set(payload.data);
+            const saved = ImportExport.validate(Storage.load());
+            if (saved.ok) {
+              State.set(saved.normalized.data);
               syncInputsFromState();
               renderResults();
             }
@@ -1348,44 +1257,25 @@
           });
         };
 
-        const setupSections = () => {
+        // Sections and the results bar start open on wide screens and folded on phones.
+        const openOnWideScreens = (details) => {
           const media = window.matchMedia("(min-width: 900px)");
-          const applyState = () => {
-            document.querySelectorAll("details[data-section]").forEach((detail) => {
-              detail.open = media.matches;
-            });
-          };
-          applyState();
+          const apply = () => details.forEach((detail) => { detail.open = media.matches; });
+          apply();
           if (typeof media.addEventListener === "function") {
-            media.addEventListener("change", applyState);
+            media.addEventListener("change", apply);
           } else if (typeof media.addListener === "function") {
-            media.addListener(applyState);
-          }
-        };
-
-        const setupResultsBar = () => {
-          const detail = elements.resultsBar;
-          if (!detail) return;
-          const media = window.matchMedia("(min-width: 900px)");
-          const applyState = () => {
-            detail.open = media.matches;
-          };
-          applyState();
-          if (typeof media.addEventListener === "function") {
-            media.addEventListener("change", applyState);
-          } else if (typeof media.addListener === "function") {
-            media.addListener(applyState);
+            media.addListener(apply);
           }
         };
 
         const init = () => {
-          const stored = Storage.load();
-          if (stored && stored.data) {
-            State.set(stored.data);
+          const saved = ImportExport.validate(Storage.load());
+          if (saved.ok) {
+            State.set(saved.normalized.data);
           }
           syncInputsFromState();
-          setupSections();
-          setupResultsBar();
+          openOnWideScreens([...document.querySelectorAll("details[data-section]"), elements.resultsBar].filter(Boolean));
           renderResults();
           bindEvents();
         };
